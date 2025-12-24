@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Banque du Jeu – Monopoly Like</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#eef1f7; padding:20px; }
+    h1 { text-align:center; }
+    .container { max-width:1200px; margin:auto; }
+    .hidden { display:none; }
+    .card { background:#fff; padding:15px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.15); margin-bottom:20px; }
+    label { display:block; margin-top:10px; }
+    input, select, button { width:100%; padding:8px; margin-top:5px; }
+    button { background:#2d98da; color:#fff; border:none; border-radius:8px; cursor:pointer; margin-top:10px; }
+    button.secondary { background:#8395a7; }
+    button.danger { background:#ee5253; }
+
+    .cards { display:flex; gap:15px; flex-wrap:wrap; }
+    .bank-card { width:200px; height:120px; border-radius:16px; background:linear-gradient(135deg,#0984e3,#74b9ff); color:#fff; padding:12px; cursor:pointer; position:relative; }
+    .bank-card .spec { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:bold; opacity:0.15; transform:rotate(-20deg); }
+    .bank-card .name { font-size:16px; font-weight:bold; }
+    .bank-card .id { font-size:12px; margin-top:5px; }
+
+    table { width:100%; border-collapse: collapse; }
+    th, td { border:1px solid #ccc; padding:6px; text-align:center; }
+    th { background:#eee; }
+
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; }
+    .modal .box { background:#fff; border-radius:12px; padding:20px; width:420px; max-height:80vh; overflow:auto; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🏦 Banque du Jeu</h1>
+
+  <!-- INITIALISATION -->
+  <div class="card" id="setup">
+    <h2>Initialisation du jeu</h2>
+    <label>Noms des joueurs (séparés par virgule)</label>
+    <input id="playersInput" value="Player-1, player-2, player-3" />
+    <label>IDs des cartes (même ordre)</label>
+    <input id="idsInput" value="CARD-001, CARD-002, CARD-003" />
+    <label>Solde initial</label>
+    <input id="initialBalance" type="number" value="1000" />
+    <button onclick="initGame()">Lancer le jeu</button>
+  </div>
+
+  <!-- JEU -->
+  <div id="game" class="hidden">
+
+    <div class="card">
+      <h2>Cartes bancaires (fonctionnelles)</h2>
+      <div class="cards" id="cards"></div>
+    </div>
+
+    <div class="card">
+      <h2>Transaction</h2>
+      <label>Type</label>
+      <select id="type">
+        <option value="achat">Achat</option>
+        <option value="amende">Amende</option>
+        <option value="taxe">Taxe</option>
+        <option value="etat">État</option>
+      </select>
+
+      <label>Payeur (carte)</label>
+      <select id="from"></select>
+
+      <label>Bénéficiaire</label>
+      <select id="to"></select>
+
+      <label>Montant</label>
+      <input type="number" id="amount" />
+      <button onclick="transaction()">Valider</button>
+      <button class="danger" onclick="resetGame()">Reset</button>
+    </div>
+
+    <div class="card">
+      <h2>Historique global</h2>
+      <table>
+        <thead><tr><th>Type</th><th>De</th><th>Vers</th><th>Montant</th></tr></thead>
+        <tbody id="history"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="box">
+    <h3 id="modalName"></h3>
+    <p><strong>ID :</strong> <span id="modalId"></span></p>
+    <p><strong>Solde :</strong> <span id="modalBalance"></span> €</p>
+    <h4>Historique</h4>
+    <ul id="modalHistory"></ul>
+    <button class="secondary" onclick="closeModal()">Fermer</button>
+  </div>
+</div>
+
+<script>
+  let players = {};
+  let globalHistory = [];
+
+  function initGame(){
+    const names = playersInput.value.split(',').map(s=>s.trim());
+    const ids = idsInput.value.split(',').map(s=>s.trim());
+    const init = parseInt(initialBalance.value)||0;
+    players = {}; globalHistory = [];
+    names.forEach((n,i)=>{
+      players[n] = { id: ids[i] || 'CARD-'+i, balance: init, history: [] };
+    });
+    setup.classList.add('hidden');
+    game.classList.remove('hidden');
+    refreshUI();
+  }
+
+  function refreshUI(){
+    from.innerHTML=''; to.innerHTML=''; cards.innerHTML=''; history.innerHTML='';
+    Object.keys(players).forEach(n=>{
+      from.innerHTML += `<option>${n}</option>`;
+      to.innerHTML += `<option>${n}</option>`;
+      const c = document.createElement('div');
+      c.className='bank-card';
+      c.innerHTML = `<div class="spec">SPÉCIMEN</div><div class="name">${n}</div><div class="id">${players[n].id}</div>`;
+      c.onclick = ()=>openCard(n);
+      cards.appendChild(c);
+    });
+  }
+
+  function transaction(){
+    const f = from.value;
+    const t = to.value;
+    const m = parseInt(amount.value);
+    if(!m || m<=0) return alert('Montant invalide');
+    if(players[f].balance < m) return alert('Solde insuffisant');
+    players[f].balance -= m;
+    players[t].balance += m;
+    players[f].history.push(`-${m}€ → ${t}`);
+    players[t].history.push(`+${m}€ ← ${f}`);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${type.value}</td><td>${f}</td><td>${t}</td><td>${m} €</td>`;
+    history.appendChild(tr);
+    amount.value='';
+  }
+
+  function openCard(name){
+    modalName.innerText = name;
+    modalId.innerText = players[name].id;
+    modalBalance.innerText = players[name].balance;
+    modalHistory.innerHTML='';
+    players[name].history.slice().reverse().forEach(h=>{
+      const li=document.createElement('li'); li.innerText=h; modalHistory.appendChild(li);
+    });
+    modal.style.display='flex';
+  }
+  function closeModal(){ modal.style.display='none'; }
+
+  function resetGame(){ location.reload(); }
+</script>
+</body>
+</html>
