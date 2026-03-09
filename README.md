@@ -7,7 +7,7 @@ Bienvenue dans **Simulation Bancaire**, un outil simple permettant de tester et 
 ## 🚀 Accéder à la simulation
 
 <p align="center">
-  <a href="https://ad6211.github.io/simulation-banquaire.github.io/">
+  <a href="https://ad6211.github.io/mybank-simulation.github.io/">
     <img src="https://img.shields.io/badge/Ouvrir%20la%20simulation-2ea44f?style=for-the-badge&logo=github&logoColor=white">
   </a>
 </p>
