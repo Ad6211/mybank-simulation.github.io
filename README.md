@@ -20,7 +20,8 @@ Ce projet permet de simuler différents comportements bancaires et d'observer le
 
 - 💳 Gestion d'argent simulée  
 - 📈 Visualisation simple  
-- 🌐 Accessible directement dans le navigateur  
+- 🌐 Accessible directement dans le navigateur 
+- 🎩 Pratique et fun pour le monopoly (conseillé d'utiliser un compte BANQUE en tant que participant.) 
 
 ---
 
